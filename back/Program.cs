@@ -16,5 +16,7 @@ app.UseCors("PermitirTodo");
 
 app.MapGet("/", () => "El backend del Hotel está corriendo y listo.");
 app.MapRegistrarEndpoints(); 
+app.MapEstadiaEndpoints();
+app.MapHabitacionEndpoints();
 
 app.Run();

@@ -2,44 +2,43 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Hotel | Registro</title>
+    <title>Dashboard Hotel | Inicio</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Registrar Nuevo Cliente</h5>
-                </div>
-                <div class="card-body">
-                    <form id="formRegistroCliente">
-                        <div class="mb-3">
-                            <label for="nombre" class="form-label">Nombre</label>
-                            <input type="text" class="form-control" id="nombre" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="apellido" class="form-label">Apellido</label>
-                            <input type="text" class="form-control" id="apellido" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="documento" class="form-label">Documento de Identidad</label>
-                            <input type="text" class="form-control" id="documento" required>
-                        </div>
-                        
-                        <div id="mensajeAlerta" class="alert d-none" role="alert"></div>
+<nav class="navbar navbar-dark bg-dark mb-5">
+    <div class="container">
+        <span class="navbar-brand mb-0 h1">Sistema de Gestión Hotelera</span>
+    </div>
+</nav>
 
-                        <button type="submit" class="btn btn-primary w-100">Guardar Cliente</button>
-                    </form>
+<div class="container">
+    <h2 class="text-center mb-5">Bienvenido al Panel de Control</h2>
+    <div class="row justify-content-center">
+        
+        <div class="col-md-5 mb-4">
+            <div class="card shadow-sm h-100 text-center">
+                <div class="card-body py-5">
+                    <h4 class="card-title">1. Registrar Cliente</h4>
+                    <p class="card-text text-muted">Registre a un nuevo cliente en el sistema antes de poder asignarle una habitación.</p>
+                    <a href="cliente.html" class="btn btn-primary mt-3">Ir a Registro de Cliente</a>
                 </div>
             </div>
         </div>
+
+        <div class="col-md-5 mb-4">
+            <div class="card shadow-sm h-100 text-center">
+                <div class="card-body py-5">
+                    <h4 class="card-title">2. Nueva Reserva / Estadía</h4>
+                    <p class="card-text text-muted">Asigne habitaciones, fechas y registre a los huéspedes de una nueva estadía.</p>
+                    <a href="reserva.html" class="btn btn-success mt-3">Ir a Nueva Reserva</a>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 
-<script src="app.js"></script>
 </body>
 </html>

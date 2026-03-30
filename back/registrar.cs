@@ -22,7 +22,7 @@ public static class Registrar
                 using (SqlCommand checkCmd = new SqlCommand(checkQuery, connection))
                 {
                     checkCmd.Parameters.AddWithValue("@Documento", peticion.Documento);
-                    int existe = (int)await checkCmd.ExecuteScalarAsync();
+                    int? existe = (int?)await checkCmd.ExecuteScalarAsync();
 
                     if (existe > 0)
                     {
