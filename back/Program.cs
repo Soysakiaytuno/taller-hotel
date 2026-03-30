@@ -1,25 +1,20 @@
 using Microsoft.Data.SqlClient;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// 1. AGREGA ESTO PARA PERMITIR CORS
+builder.Services.AddCors(options => {
+    options.AddPolicy("PermitirTodo", policy => {
+        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+    });
+});
+
 var app = builder.Build();
 
-string connectionString = "Server=localhost;Database=HotelDB;Trusted_Connection=True;TrustServerCertificate=True;";
-
-try
-{
-    using (SqlConnection connection = new SqlConnection(connectionString))
-    {
-        Console.WriteLine("Intentando conectar a la base de datos...");
-        connection.Open();
-        Console.WriteLine("¡ÉXITO! La conexión a HotelDB está funcionando perfectamente.");
-    }
-}
-catch (Exception ex)
-{
-    Console.WriteLine("ERROR al conectar con la base de datos:");
-    Console.WriteLine(ex.Message);
-}
+// 2. ACTIVA EL CORS ANTES DE TUS RUTAS
+app.UseCors("PermitirTodo");
 
 app.MapGet("/", () => "El backend del Hotel está corriendo y listo.");
+app.MapRegistrarEndpoints(); 
 
 app.Run();
