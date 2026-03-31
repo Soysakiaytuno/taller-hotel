@@ -2,17 +2,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     const contenedor = document.getElementById('contenedorDirectorios');
     
     try {
+        // ⚠️ CAMBIO TEMPORAL PARA PRUEBAS: Usamos la ruta vacía
         const response = await fetch('http://localhost:5189/api/departamentos');
-        const departamentos = await response.json();
         
+        const departamentos = await response.json();
         contenedor.innerHTML = '';
         
-        // Validación en caso de que la tabla esté vacía
+        // LA VALIDACIÓN: Si la lista viene con 0 contactos
         if (departamentos.length === 0) {
-            contenedor.innerHTML = '<div class="alert alert-info w-100 text-center">No hay departamentos registrados.</div>';
-            return;
+            contenedor.innerHTML = `
+                <div class="col-12 mt-5">
+                    <div class="alert alert-warning text-center p-5 shadow-sm rounded">
+                        <h4 class="text-warning-emphasis mb-3">📭 No hay contactos disponibles</h4>
+                        <p class="mb-0">Aún no se han registrado departamentos ni encargados en la base de datos.</p>
+                    </div>
+                </div>
+            `;
+            return; // Detenemos la ejecución aquí
         }
-
         // Generación dinámica de las tarjetas
         departamentos.forEach(d => {
             contenedor.innerHTML += `

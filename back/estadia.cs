@@ -6,7 +6,8 @@ public static class EstadiaApi
     public static void MapEstadiaEndpoints(this WebApplication app)
     {
         // 1. Obtener lista de estadías para las tarjetas
-        app.MapGet("/api/estadias", async () =>
+        // 1. Obtener lista de estadías (Con opción a incluir el historial de Check-out)
+        app.MapGet("/api/estadias", async (bool? incluirPasadas) =>
         {
             var lista = new List<object>();
             string connectionString = "Server=localhost;Database=HotelDB;Trusted_Connection=True;TrustServerCertificate=True;";
@@ -14,8 +15,14 @@ public static class EstadiaApi
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
                 await conn.OpenAsync();
-                // Traemos datos del Cliente y la Estadía, filtrando por Confirmada o Check-in
-                string query = @"
+                
+                // LÓGICA DEL SWITCH: Cambiamos la condición SQL dependiendo de lo que pida el Frontend
+                string condicionEstado = (incluirPasadas == true) 
+                    ? "e.Estado_Reserva IN ('Confirmada', 'Check-in', 'Check-out')" 
+                    : "e.Estado_Reserva IN ('Confirmada', 'Check-in')";
+
+                // Inyectamos la condición en la consulta
+                string query = $@"
                     SELECT 
                         e.ID_Estadia, 
                         u.Nombre, u.Apellido, u.Documentacion,
@@ -23,7 +30,7 @@ public static class EstadiaApi
                     FROM Estadia e
                     INNER JOIN Cliente c ON e.ID_Cliente = c.ID_Cliente
                     INNER JOIN Usuario u ON c.ID_Usuario = u.ID_Usuario
-                    WHERE e.Estado_Reserva IN ('Confirmada', 'Check-in')
+                    WHERE {condicionEstado}
                     ORDER BY e.Fecha_Ingreso ASC";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
@@ -35,8 +42,8 @@ public static class EstadiaApi
                             id = reader.GetInt32(0),
                             cliente = $"{reader.GetString(1)} {reader.GetString(2)}",
                             doc = reader.GetString(3),
-                            ingreso = reader.GetDateTime(4).ToString("yyyy-MM-dd"), // Siempre lo muestra
-                            salida = reader.GetDateTime(5).ToString("yyyy-MM-dd"),  // Siempre lo muestra
+                            ingreso = reader.GetDateTime(4).ToString("yyyy-MM-dd"),
+                            salida = reader.GetDateTime(5).ToString("yyyy-MM-dd"),
                             estado = reader.GetString(6)
                         });
                     }
@@ -360,6 +367,56 @@ public static class EstadiaApi
                     }
                 }
             }
+        });
+        // 4. NUEVA RUTA: Búsqueda global de reservas (Incluye Check-out)
+        app.MapGet("/api/estadias/buscar", async (string q) =>
+        {
+            if (string.IsNullOrWhiteSpace(q)) return Results.BadRequest("Término de búsqueda vacío.");
+
+            var lista = new List<object>();
+            string connectionString = "Server=localhost;Database=HotelDB;Trusted_Connection=True;TrustServerCertificate=True;";
+
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                await conn.OpenAsync();
+                
+                // Buscamos coincidencias en Documento, Nombre, Apellido o el Nombre Completo
+                string query = @"
+                    SELECT 
+                        e.ID_Estadia, 
+                        u.Nombre, u.Apellido, u.Documentacion,
+                        e.Fecha_Ingreso, e.Fecha_Salida, e.Estado_Reserva
+                    FROM Estadia e
+                    INNER JOIN Cliente c ON e.ID_Cliente = c.ID_Cliente
+                    INNER JOIN Usuario u ON c.ID_Usuario = u.ID_Usuario
+                    WHERE u.Documentacion LIKE @busqueda 
+                       OR u.Nombre LIKE @busqueda 
+                       OR u.Apellido LIKE @busqueda
+                       OR CONCAT(u.Nombre, ' ', u.Apellido) LIKE @busqueda
+                    ORDER BY e.Fecha_Ingreso DESC"; // Las más recientes primero
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    // Añadimos los % para que busque coincidencias parciales (ej. buscar "Pér" encuentra "Pérez")
+                    cmd.Parameters.AddWithValue("@busqueda", "%" + q + "%");
+
+                    using (SqlDataReader reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            lista.Add(new {
+                                id = reader.GetInt32(0),
+                                cliente = $"{reader.GetString(1)} {reader.GetString(2)}",
+                                doc = reader.GetString(3),
+                                ingreso = reader.GetDateTime(4).ToString("yyyy-MM-dd"),
+                                salida = reader.GetDateTime(5).ToString("yyyy-MM-dd"),
+                                estado = reader.GetString(6)
+                            });
+                        }
+                    }
+                }
+            }
+            return Results.Ok(lista);
         });
     }
 } // <-- Fin del método MapEstadiaEndpoints y la clase EstadiaApi

@@ -6,16 +6,33 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
-
 <div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <a href="index.html" class="btn btn-outline-secondary">&larr; Volver</a>
-        <h2>Panel de Estadías</h2>
-        <div></div>
+    
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <a href="index.html" class="btn btn-outline-secondary">&larr; Volver</a>
+            <h2 class="mb-0">Panel de Estadías</h2>
+        </div>
+        
+        <div class="d-flex flex-column align-items-end">
+            <div class="input-group mb-2" style="max-width: 400px;">
+                <input type="text" id="inputBusqueda" class="form-control" placeholder="Doc, Nombre o Apellido...">
+                <button class="btn btn-primary" type="button" id="btnBuscar">🔍 Buscar</button>
+                <button class="btn btn-outline-danger" type="button" id="btnLimpiar" style="display: none;">✖</button>
+            </div>
+            
+            <div class="form-check form-switch" id="contenedorSwitch">
+                <input class="form-check-input" type="checkbox" role="switch" id="switchHistorial">
+                <label class="form-check-label text-muted" for="switchHistorial" style="cursor: pointer;">
+                    Mostrar historial (Check-out)
+                </label>
+            </div>
+        </div>
     </div>
 
     <div class="row" id="contenedorTarjetas">
         </div>
+    
 </div>
 
 <div class="modal fade" id="modalDetalle" tabindex="-1">
@@ -26,9 +43,9 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div id="cuerpoModal" class="modal-body">
-            </div>
+                </div>
             <div class="modal-footer bg-light" id="footerModal">
-            </div>
+                </div>
         </div>
     </div>
 </div>

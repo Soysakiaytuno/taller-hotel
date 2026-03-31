@@ -15,7 +15,7 @@ public static class DepartamentoApi
                 
                 string query = @"
                     SELECT 
-                        d.Nombre_Rol AS NombreDepartamento, 
+                        d.Nombre AS NombreDepartamento, 
                         d.Contacto,
                         u.Nombre, u.Apellido
                     FROM Departamento d
@@ -37,6 +37,12 @@ public static class DepartamentoApi
                 }
             }
             return Results.Ok(lista);
+        });
+        // 2. RUTA DE PRUEBA: Simula que no hay datos
+        app.MapGet("/api/departamentos-vacios", () =>
+        {
+            // Retorna una lista vacía (0 contactos)
+            return Results.Ok(new List<object>());
         });
     }
 }

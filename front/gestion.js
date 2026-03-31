@@ -1,55 +1,115 @@
 const puerto = 5189;
 
-document.addEventListener('DOMContentLoaded', cargarEstadias);
+// ==========================================
+// 1. EVENTOS INICIALES
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    cargarEstadias(); // Carga inicial por defecto
 
+    // Eventos de Búsqueda
+    document.getElementById('btnBuscar').addEventListener('click', realizarBusqueda);
+    document.getElementById('btnLimpiar').addEventListener('click', limpiarBusqueda);
+    document.getElementById('inputBusqueda').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') realizarBusqueda();
+    });
+
+    // Evento del Switch de Historial
+    document.getElementById('switchHistorial').addEventListener('change', cargarEstadias);
+});
+
+// ==========================================
+// 2. LÓGICA DE CARGA Y BÚSQUEDA
+// ==========================================
+
+// Carga la vista general (Lee el estado del switch automáticamente)
 async function cargarEstadias() {
-    const contenedor = document.getElementById('contenedorTarjetas');
+    const mostrarPasadas = document.getElementById('switchHistorial').checked;
+    
     try {
-        const res = await fetch(`http://localhost:${puerto}/api/estadias`);
+        // Le mandamos el valor del switch al backend (true o false)
+        const res = await fetch(`http://localhost:${puerto}/api/estadias?incluirPasadas=${mostrarPasadas}`);
         const estadias = await res.json();
+        
+        let mensaje = mostrarPasadas 
+            ? "📭 No hay registros en el sistema." 
+            : "📭 Por ahora no hay reservas activas a visualizar.";
+            
+        dibujarTarjetas(estadias, mensaje);
+    } catch (err) {
+        console.error("Error al cargar estadías:", err);
+    }
+}
 
-        contenedor.innerHTML = '';
+// Carga los resultados de la búsqueda
+async function realizarBusqueda() {
+    const query = document.getElementById('inputBusqueda').value.trim();
+    if (query === "") return;
 
-        // NUEVA LÓGICA: Validar si la lista está vacía
-        if (estadias.length === 0) {
-            contenedor.innerHTML = `
-                <div class="col-12 text-center mt-5">
-                    <div class="p-5 bg-white shadow-sm rounded">
-                        <h4 class="text-muted mb-3">📭 Por ahora no hay reservas a visualizar.</h4>
-                        <p class="text-muted mb-0">Cuando registres una nueva estadía, aparecerá aquí automáticamente.</p>
-                    </div>
+    // Cambios visuales al buscar
+    document.getElementById('btnLimpiar').style.display = 'block';
+    document.getElementById('contenedorSwitch').style.display = 'none'; // Ocultamos el switch al buscar
+
+    try {
+        const res = await fetch(`http://localhost:${puerto}/api/estadias/buscar?q=${encodeURIComponent(query)}`);
+        const resultados = await res.json();
+        dibujarTarjetas(resultados, `🔍 No se encontraron reservas que coincidan con "${query}".`);
+    } catch (err) {
+        console.error("Error en la búsqueda:", err);
+    }
+}
+
+// Limpia la búsqueda y restaura la vista
+function limpiarBusqueda() {
+    document.getElementById('inputBusqueda').value = "";
+    document.getElementById('btnLimpiar').style.display = 'none';
+    document.getElementById('contenedorSwitch').style.display = 'block'; // Volvemos a mostrar el switch
+    
+    cargarEstadias(); // Recargamos la vista respetando como haya quedado el switch
+}
+
+// ==========================================
+// 3. RENDERIZADO VISUAL
+// ==========================================
+function dibujarTarjetas(listaEstadias, mensajeVacio) {
+    const contenedor = document.getElementById('contenedorTarjetas');
+    contenedor.innerHTML = '';
+
+    if (listaEstadias.length === 0) {
+        contenedor.innerHTML = `
+            <div class="col-12 text-center mt-5">
+                <div class="p-5 bg-white shadow-sm rounded">
+                    <h5 class="text-muted mb-0">${mensajeVacio}</h5>
                 </div>
-            `;
-            return; // Detenemos la función aquí para que no intente dibujar tarjetas
-        }
+            </div>`;
+        return;
+    }
 
-        // Si hay datos, dibujamos las tarjetas normalmente
-        estadias.forEach(e => {
-            const esActiva = e.estado === 'Check-in';
-            contenedor.innerHTML += `
-                <div class="col-md-4 mb-3">
-                    <div class="card shadow-sm border-${esActiva ? 'success' : 'primary'} h-100" 
-                         style="cursor: pointer" onclick="verDetalle(${e.id})">
-                        <div class="card-body">
-                            <span class="badge bg-${esActiva ? 'success' : 'primary'} mb-2">
-                                ${esActiva ? 'ACTIVA (In-house)' : 'FUTURA (Confirmada)'}
-                            </span>
-                            <h5 class="card-title">${e.cliente}</h5>
-                            <p class="card-text text-muted mb-1">Doc: ${e.doc}</p>
-                            <hr>
-                            <div class="d-flex justify-content-between small">
-                                ${e.ingreso !== "" ? `<span><strong>Check-in:</strong> ${e.ingreso}</span>` : '<span></span>'}
-                                ${e.salida !== "" ? `<span><strong>Check-out:</strong> ${e.salida}</span>` : '<span></span>'}
-                            </div>
+    listaEstadias.forEach(e => {
+        let colorBorde = 'primary'; 
+        if (e.estado === 'Check-in') colorBorde = 'success';
+        if (e.estado === 'Check-out') colorBorde = 'secondary'; 
+
+        let etiquetaEstado = e.estado === 'Check-in' ? 'ACTIVA (In-house)' : 
+                            (e.estado === 'Check-out' ? 'FINALIZADA (Check-out)' : 'FUTURA (Confirmada)');
+
+        contenedor.innerHTML += `
+            <div class="col-md-4 mb-3">
+                <div class="card shadow-sm border-${colorBorde} h-100" 
+                     style="cursor: pointer" onclick="verDetalle(${e.id})">
+                    <div class="card-body">
+                        <span class="badge bg-${colorBorde} mb-2">${etiquetaEstado}</span>
+                        <h5 class="card-title">${e.cliente}</h5>
+                        <p class="card-text text-muted mb-1">Doc: ${e.doc}</p>
+                        <hr>
+                        <div class="d-flex justify-content-between small">
+                            <span><strong>Llegada:</strong> ${e.ingreso}</span>
+                            <span><strong>Salida:</strong> ${e.salida}</span>
                         </div>
                     </div>
                 </div>
-            `;
-        });
-    } catch (err) {
-        console.error(err);
-        contenedor.innerHTML = '<div class="alert alert-danger text-center">No se cargo ninguna estadía.</div>';
-    }
+            </div>
+        `;
+    });
 }
 
 async function verDetalle(id) {
