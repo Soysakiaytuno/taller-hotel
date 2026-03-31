@@ -4,7 +4,7 @@ public static class HabitacionApi
 {
     public static void MapHabitacionEndpoints(this WebApplication app)
     {
-        // 1. RUTA EXISTENTE: Obtener las habitaciones específicas
+        // 1. Obtener las habitaciones específicas
         app.MapGet("/api/habitaciones", async () =>
         {
             var habitaciones = new List<object>();
@@ -42,7 +42,7 @@ public static class HabitacionApi
             return Results.Ok(habitaciones);
         });
 
-        // 2. NUEVA RUTA: Obtener el catálogo de Tipos de Habitación
+        // 2. Obtener el catálogo de Tipos de Habitación
         app.MapGet("/api/tipos-habitacion", async () =>
         {
             var tipos = new List<object>();
@@ -51,7 +51,7 @@ public static class HabitacionApi
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
                 await conn.OpenAsync();
-                // Traemos el ID, Nombre, Capacidad y Precio para mostrarlo bonito
+                
                 string query = "SELECT ID_TipoHabitacion, Nombre, CapacidadMaxima, Precio FROM Tipo_Habitacion"; 
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))

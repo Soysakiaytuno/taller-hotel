@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "UagjjyLXDvg=",
+  "dgSpecHash": "XR3JOAmSnH0=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Mijael Ander\\Documents\\tallersoftware\\hotel\\back\\back.csproj",
+  "projectFilePath": "C:\\Users\\Mijael Ander\\Documents\\tallersoftware\\elhotel\\taller-hotel\\back\\back.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Mijael Ander\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.0\\microsoft.aspnetcore.openapi.10.0.0.nupkg.sha512",
     "C:\\Users\\Mijael Ander\\.nuget\\packages\\microsoft.bcl.cryptography\\9.0.13\\microsoft.bcl.cryptography.9.0.13.nupkg.sha512",

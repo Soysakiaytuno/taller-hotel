@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Mijael Ander\\Documents\\tallersoftware\\hotel\\back\\back.csproj": {}
+    "C:\\Users\\Mijael Ander\\Documents\\tallersoftware\\elhotel\\taller-hotel\\back\\back.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Mijael Ander\\Documents\\tallersoftware\\hotel\\back\\back.csproj": {
+    "C:\\Users\\Mijael Ander\\Documents\\tallersoftware\\elhotel\\taller-hotel\\back\\back.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Mijael Ander\\Documents\\tallersoftware\\hotel\\back\\back.csproj",
+        "projectUniqueName": "C:\\Users\\Mijael Ander\\Documents\\tallersoftware\\elhotel\\taller-hotel\\back\\back.csproj",
         "projectName": "back",
-        "projectPath": "C:\\Users\\Mijael Ander\\Documents\\tallersoftware\\hotel\\back\\back.csproj",
+        "projectPath": "C:\\Users\\Mijael Ander\\Documents\\tallersoftware\\elhotel\\taller-hotel\\back\\back.csproj",
         "packagesPath": "C:\\Users\\Mijael Ander\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Mijael Ander\\Documents\\tallersoftware\\hotel\\back\\obj\\",
+        "outputPath": "C:\\Users\\Mijael Ander\\Documents\\tallersoftware\\elhotel\\taller-hotel\\back\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Mijael Ander\\AppData\\Roaming\\NuGet\\NuGet.Config"

@@ -6,7 +6,6 @@ public static class EstadiaApi
     public static void MapEstadiaEndpoints(this WebApplication app)
     {
         // 1. Obtener lista de estadías para las tarjetas
-        // 1. Obtener lista de estadías (Con opción a incluir el historial de Check-out)
         app.MapGet("/api/estadias", async (bool? incluirPasadas) =>
         {
             var lista = new List<object>();
@@ -297,7 +296,7 @@ public static class EstadiaApi
                 }
             }
         });
-        // 3. RUTA ACTUALIZADA: Cambiar estado de la Estadía Y de las Habitaciones
+        // 3. Cambiar estado de la Estadía Y de las Habitaciones
         app.MapPut("/api/estadias/{id}/estado", async (int id, CambioEstadoRequest req) =>
         {
             if (req.NuevoEstado != "Check-in" && req.NuevoEstado != "Check-out")
@@ -305,7 +304,6 @@ public static class EstadiaApi
                 return Results.BadRequest(new { error = "Estado no válido." });
             }
 
-            // Lógica: Si es Check-in, la habitación se Ocupa (2). Si es Check-out, se Libera (1).
             int nuevoEstadoHabitacion = req.NuevoEstado == "Check-in" ? 2 : 1;
 
             string connectionString = "Server=localhost;Database=HotelDB;Trusted_Connection=True;TrustServerCertificate=True;";
@@ -314,7 +312,6 @@ public static class EstadiaApi
             {
                 await conn.OpenAsync();
                 
-                // Iniciamos la transacción porque tocaremos dos tablas
                 using (SqlTransaction transaction = conn.BeginTransaction())
                 {
                     try
@@ -368,7 +365,7 @@ public static class EstadiaApi
                 }
             }
         });
-        // 4. NUEVA RUTA: Búsqueda global de reservas (Incluye Check-out)
+        // 4. Búsqueda global de reservas (Incluye Check-out)
         app.MapGet("/api/estadias/buscar", async (string q) =>
         {
             if (string.IsNullOrWhiteSpace(q)) return Results.BadRequest("Término de búsqueda vacío.");
@@ -393,7 +390,7 @@ public static class EstadiaApi
                        OR u.Nombre LIKE @busqueda 
                        OR u.Apellido LIKE @busqueda
                        OR CONCAT(u.Nombre, ' ', u.Apellido) LIKE @busqueda
-                    ORDER BY e.Fecha_Ingreso DESC"; // Las más recientes primero
+                    ORDER BY e.Fecha_Ingreso DESC";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
@@ -419,9 +416,7 @@ public static class EstadiaApi
             return Results.Ok(lista);
         });
     }
-} // <-- Fin del método MapEstadiaEndpoints y la clase EstadiaApi
-
-// MODELO ACTUALIZADO: Ahora recibe un string para la documentación
+}
 public class RegistroEstadiaRequest
 {
     public string DocumentacionCliente { get; set; } = string.Empty; 
