@@ -1,15 +1,12 @@
+const roomSelectionMediator = window.roomSelectionMediatorInstance;
+
 const inputCantidad = document.getElementById('cantidadPersonas');
 const contenedorHuespedes = document.getElementById('contenedorHuespedes');
 
 // 1. GENERAR FORMULARIOS DE HUÉSPEDES
 inputCantidad.addEventListener('input', () => {
     const cantidad = parseInt(inputCantidad.value) || 0;
-    contenedorHuespedes.innerHTML = ''; 
-
-    // Verificamos la capacidad usando la variable global del carrito
-    if (cantidad > window.capacidadMaximaActual && window.carrito.length > 0) {
-        alert(`¡Atención! Has seleccionado ${cantidad} personas, pero el carrito solo soporta ${window.capacidadMaximaActual}. Agrega más habitaciones.`);
-    }
+    contenedorHuespedes.innerHTML = '';
 
     if (cantidad > 0) {
         contenedorHuespedes.innerHTML = `<h6 class="mt-3 border-bottom pb-2 text-primary">Detalle de Huéspedes</h6>`;
@@ -31,20 +28,25 @@ inputCantidad.addEventListener('input', () => {
     }
 });
 
-// 2. ENVIAR FORMULARIO AL BACKEND
+inputCantidad.addEventListener('change', () => {
+    const cantidad = parseInt(inputCantidad.value) || 0;
+    if (cantidad > roomSelectionMediator.currentMaxCapacity && roomSelectionMediator.selectedRooms.length > 0) {
+        alert(`¡Atención! Has seleccionado ${cantidad} personas, pero las habitaciones seleccionadas solo soportan ${roomSelectionMediator.currentMaxCapacity}. Agrega más habitaciones.`);
+    }
+});
+
 document.getElementById('formReserva').addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    // Leemos el carrito global
-    if (window.carrito.length === 0) {
+    if (roomSelectionMediator.selectedRooms.length === 0) {
         alert("Debes agregar al menos una habitación al carrito.");
         return;
     }
 
-    const habitacionesIds = window.carrito.map(h => h.id);
+    const habitacionesIds = roomSelectionMediator.selectedRooms.map(h => h.id);
     const huespedes = [];
     
-    document.querySelectorAll('.huesped-row').forEach(row => {
+    document.querySelectorAll('.huesped-row').forEach(row => { 
         huespedes.push({
             Nombre: row.querySelector('.h-nombre').value,
             Apellido: row.querySelector('.h-apellido').value,
@@ -75,7 +77,6 @@ document.getElementById('formReserva').addEventListener('submit', async (e) => {
             body: JSON.stringify(payload)
         });
 
-        // Intentamos leer la respuesta del servidor (sea éxito o error)
         let result;
         try {
             result = await response.json();
@@ -89,14 +90,12 @@ document.getElementById('formReserva').addEventListener('submit', async (e) => {
             alerta.classList.add('alert-success');
             alerta.textContent = result.mensaje;
             
-            // LIMPIAR LA PANTALLA TRAS EL ÉXITO
-            window.carrito = [];
-            window.actualizarUI();
+            roomSelectionMediator.habitacionesSeleccionadas = [];
+            roomSelectionMediator.updateUI();
             document.getElementById('formReserva').reset();
             contenedorHuespedes.innerHTML = '';
         } else {
             alerta.classList.add('alert-danger');
-            // AQUÍ ESTÁ LA MAGIA: result.detail atrapa el error de transaction.Rollback() en C#
             alerta.textContent = result.error || result.detail || "Error interno del servidor (500). Revisa la terminal de C#."; 
         }
     } catch (error) {

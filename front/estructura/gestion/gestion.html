@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Reservas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div class="container mt-4">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <a href="../../index.html" class="btn btn-outline-secondary">&larr; Volver</a>
+            <h2 class="mb-0">Panel de Estadías</h2>
+        </div>
+        
+        <div class="d-flex flex-column align-items-end">
+            <div class="input-group mb-2" style="max-width: 400px;">
+                <input type="text" id="inputBusqueda" class="form-control" placeholder="Doc, Nombre o Apellido...">
+                <button class="btn btn-primary" type="button" id="btnBuscar">🔍 Buscar</button>
+                <button class="btn btn-outline-danger" type="button" id="btnLimpiar" style="display: none;">✖</button>
+            </div>
+            
+            <div class="form-check form-switch" id="contenedorSwitch">
+                <input class="form-check-input" type="checkbox" role="switch" id="switchHistorial">
+                <label class="form-check-label text-muted" for="switchHistorial" style="cursor: pointer;">
+                    Mostrar estadías antiguas (Check-out)
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <div class="row" id="contenedorTarjetas">
+        </div>
+    
+</div>
+
+<div class="modal fade" id="modalDetalle" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">Detalles de la Estadía</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div id="cuerpoModal" class="modal-body">
+                </div>
+            <div class="modal-footer bg-light" id="footerModal">
+                </div>
+        </div>
+    </div>
+</div>
+
+<template id="template-empty-state">
+    <div class="col-12 text-center mt-5">
+        <div class="p-5 bg-white shadow-sm rounded">
+            <h5 class="text-muted mb-0" data-placeholder="mensajeVacio"></h5>
+        </div>
+    </div>
+</template>
+
+<template id="template-estadia-card">
+    <div class="col-md-4 mb-3">
+        <div class="card shadow-sm h-100" style="cursor: pointer">
+            <div class="card-body">
+                <span class="badge mb-2" data-placeholder="etiquetaEstado"></span>
+                <h5 class="card-title" data-placeholder="cliente"></h5>
+                <p class="card-text text-muted mb-1">Doc: <span data-placeholder="doc"></span></p>
+                <hr>
+                <div class="d-flex justify-content-between small">
+                    <span><strong>Llegada:</strong> <span data-placeholder="ingreso"></span></span>
+                    <span><strong>Salida:</strong> <span data-placeholder="salida"></span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<template id="template-modal-loading">
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary"></div>
+        <p class="mt-2 text-muted">Cargando folio completo...</p>
+    </div>
+</template>
+
+<template id="template-modal-error">
+    <div class="alert alert-danger text-center">
+        <strong>Error al cargar los detalles.</strong><br>
+        Asegúrate de que el servidor de C# esté corriendo en el puerto <span data-placeholder="puerto"></span>.
+    </div>
+</template>
+
+<template id="template-modal-detalle">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="bg-light p-3 rounded border">
+                <h6 class="text-primary border-bottom pb-2">Datos de la Reserva</h6>
+                <p class="mb-1"><strong>ID Reserva:</strong> #<span data-placeholder="reservaId"></span></p>
+                <p class="mb-2"><strong>Estado:</strong> <span class="badge" data-placeholder="reservaEstado"></span></p>
+                
+                <p class="mb-0 small">Llegada programada: <span data-placeholder="reservaIngreso"></span></p>
+                <p class="mb-2 small border-bottom pb-2">Salida programada: <span data-placeholder="reservaSalida"></span></p>
+                
+                <p class="mb-1 text-success d-none" data-container="checkInRealContainer"><strong>Check-in Real:</strong> <span data-placeholder="checkInReal"></span></p>
+                <p class="mb-1 text-danger d-none" data-container="checkOutRealContainer"><strong>Check-out Real:</strong> <span data-placeholder="checkOutReal"></span></p>
+                
+                <p class="mb-0 small text-muted mt-3">Registrada el: <span data-placeholder="fechaRegistro"></span></p>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="bg-light p-3 rounded border h-100">
+                <h6 class="text-primary border-bottom pb-2">Cliente Titular (Quien reservó)</h6>
+                <h5 class="mb-1 mt-3" data-placeholder="titular"></h5>
+                <p class="mb-0 text-muted">Documentación: <span data-placeholder="documentacion"></span></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-5">
+            <h6 class="text-primary border-bottom pb-2">Habitaciones (<span data-placeholder="numHabitaciones"></span>)</h6>
+            <ul class="list-group mb-3 shadow-sm" data-container="habitaciones">
+            </ul>
+        </div>
+        <div class="col-md-7">
+            <h6 class="text-primary border-bottom pb-2">Huéspedes (<span data-placeholder="numHuespedes"></span>)</h6>
+            <div class="table-responsive shadow-sm rounded border">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nombre Completo</th>
+                            <th>Documentación</th>
+                        </tr>
+                    </thead>
+                    <tbody data-container="huespedes">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</template>
+
+<template id="template-habitacion-item">
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+        <strong data-placeholder="numero"></strong>
+        <span class="badge bg-secondary rounded-pill" data-placeholder="tipo"></span>
+    </li>
+</template>
+
+<template id="template-huesped-row">
+    <tr>
+        <td><span data-placeholder="nombre"></span> <span data-placeholder="apellido"></span></td>
+        <td><span data-placeholder="doc"></span></td>
+    </tr>
+</template>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="gestionCargador.js"></script>
+<script src="gestionBuscador.js"></script>
+<script src="gestionDetalle.js"></script>
+<script src="gestionMediator.js"></script>
+<script src="gestion.js"></script>
+</body>
+</html>

@@ -7,7 +7,7 @@
 </head>
 <body class="bg-light p-5">
 <div class="container mt-4">
-    <a href="index.html" class="btn btn-outline-secondary shadow-sm">
+    <a href="../../index.html" class="btn btn-outline-secondary shadow-sm">
         &larr; Volver al Menú Principal
     </a>
 </div>
@@ -40,14 +40,14 @@
                     </div>
                 </div>
 
-                <h6 class="mt-4 border-bottom pb-2">Carrito de Habitaciones</h6>
+                <h6 class="mt-4 border-bottom pb-2">Habitaciones seleccionadas</h6>
                 <ul id="listaCarrito" class="list-group mb-3">
-                    <li class="list-group-item text-muted text-center id="carritoVacio">
+                    <li class="list-group-item text-muted text-center" id="carritoVacio">
                         Aún no has agregado habitaciones.
                     </li>
                 </ul>
                 <div class="d-flex justify-content-between text-success">
-                    <strong>Capacidad Total del Carrito:</strong> 
+                    <strong>Capacidad Total:</strong> 
                     <span id="capacidadTotalVisual">0 personas</span>
                 </div>
             </div>
@@ -90,7 +90,8 @@
     </form>
 </div>
 
-<script src="carrito.js"></script>
+<script src="roomSelectionMediator.js"></script> 
+<script src="listaHabitaciones.js"></script> 
 <script src="reserva.js"></script>
 </body>
 </html>
