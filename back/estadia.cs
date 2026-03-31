@@ -5,6 +5,128 @@ public static class EstadiaApi
 {
     public static void MapEstadiaEndpoints(this WebApplication app)
     {
+        // 1. Obtener lista de estadías para las tarjetas
+        app.MapGet("/api/estadias", async () =>
+        {
+            var lista = new List<object>();
+            string connectionString = "Server=localhost;Database=HotelDB;Trusted_Connection=True;TrustServerCertificate=True;";
+
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                await conn.OpenAsync();
+                // Traemos datos del Cliente y la Estadía, filtrando por Confirmada o Check-in
+                string query = @"
+                    SELECT 
+                        e.ID_Estadia, 
+                        u.Nombre, u.Apellido, u.Documentacion,
+                        e.Fecha_Ingreso, e.Fecha_Salida, e.Estado_Reserva
+                    FROM Estadia e
+                    INNER JOIN Cliente c ON e.ID_Cliente = c.ID_Cliente
+                    INNER JOIN Usuario u ON c.ID_Usuario = u.ID_Usuario
+                    WHERE e.Estado_Reserva IN ('Confirmada', 'Check-in')
+                    ORDER BY e.Fecha_Ingreso ASC";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                using (SqlDataReader reader = await cmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        lista.Add(new {
+                            id = reader.GetInt32(0),
+                            cliente = $"{reader.GetString(1)} {reader.GetString(2)}",
+                            doc = reader.GetString(3),
+                            ingreso = reader.GetDateTime(4).ToString("yyyy-MM-dd"), // Siempre lo muestra
+                            salida = reader.GetDateTime(5).ToString("yyyy-MM-dd"),  // Siempre lo muestra
+                            estado = reader.GetString(6)
+                        });
+                    }
+                }
+            }
+            return Results.Ok(lista);
+        });
+
+        app.MapGet("/api/estadias/{id}", async (int id) =>
+        {
+            string connectionString = "Server=localhost;Database=HotelDB;Trusted_Connection=True;TrustServerCertificate=True;";
+            
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                await conn.OpenAsync();
+
+                // A. Datos Generales de la Reserva y del Titular
+                object? datosReserva = null;
+                string qGeneral = @"
+                    SELECT 
+                        e.ID_Estadia, e.Estado_Reserva, e.Fecha_Registro, e.Fecha_Ingreso, e.Fecha_Salida,
+                        u.Nombre, u.Apellido, u.Documentacion,
+                        e.FechaHora_CheckIn, e.FechaHora_CheckOut 
+                    FROM Estadia e
+                    INNER JOIN Cliente c ON e.ID_Cliente = c.ID_Cliente
+                    INNER JOIN Usuario u ON c.ID_Usuario = u.ID_Usuario
+                    WHERE e.ID_Estadia = @id";
+                
+                using (SqlCommand cmd = new SqlCommand(qGeneral, conn))
+                {
+                    cmd.Parameters.AddWithValue("@id", id);
+                    using (var r = await cmd.ExecuteReaderAsync())
+                    {
+                        if (await r.ReadAsync())
+                        {
+                            // Validamos si la base de datos devuelve un valor Nulo (DBNull)
+                            string checkInReal = r.IsDBNull(8) ? "" : r.GetDateTime(8).ToString("yyyy-MM-dd HH:mm");
+                            string checkOutReal = r.IsDBNull(9) ? "" : r.GetDateTime(9).ToString("yyyy-MM-dd HH:mm");
+
+                            datosReserva = new {
+                                id = r.GetInt32(0),
+                                estado = r.GetString(1),
+                                fechaRegistro = r.GetDateTime(2).ToString("yyyy-MM-dd HH:mm"),
+                                ingreso = r.GetDateTime(3).ToString("yyyy-MM-dd"),
+                                salida = r.GetDateTime(4).ToString("yyyy-MM-dd"),
+                                titular = $"{r.GetString(5)} {r.GetString(6)}",
+                                documentacion = r.GetString(7),
+                                checkInReal = checkInReal,
+                                checkOutReal = checkOutReal
+                            };
+                        }
+                    }
+                }
+
+                // B. Habitaciones (Ahora traemos también el Tipo de Habitación)
+                var habitaciones = new List<object>();
+                string qHab = @"
+                    SELECT h.Numero_Habitacion, t.Nombre AS TipoHabitacion
+                    FROM Estadia_Habitacion eh 
+                    INNER JOIN Habitacion h ON eh.ID_Habitacion = h.ID_Habitacion 
+                    INNER JOIN Tipo_Habitacion t ON h.ID_TipoHabitacion = t.ID_TipoHabitacion
+                    WHERE eh.ID_Estadia = @id";
+                
+                using (SqlCommand cmd = new SqlCommand(qHab, conn)) {
+                    cmd.Parameters.AddWithValue("@id", id);
+                    using (var r = await cmd.ExecuteReaderAsync()) while(await r.ReadAsync()) 
+                        habitaciones.Add(new { numero = r.GetString(0), tipo = r.GetString(1) });
+                }
+
+                // C. Huéspedes
+                var huespedes = new List<object>();
+                string qHue = @"
+                    SELECT u.Nombre, u.Apellido, u.Documentacion 
+                    FROM Huesped_Habitacion hh
+                    INNER JOIN Estadia_Habitacion eh ON hh.ID_Estadia_Habitacion = eh.ID_Estadia_Habitacion
+                    INNER JOIN Huesped h ON hh.ID_Huesped = h.ID_Huesped
+                    INNER JOIN Usuario u ON h.ID_Usuario = u.ID_Usuario
+                    WHERE eh.ID_Estadia = @id";
+                    
+                using (SqlCommand cmd = new SqlCommand(qHue, conn)) {
+                    cmd.Parameters.AddWithValue("@id", id);
+                    using (var r = await cmd.ExecuteReaderAsync()) while(await r.ReadAsync()) 
+                        huespedes.Add(new { nombre = r.GetString(0), apellido = r.GetString(1), doc = r.GetString(2) });
+                }
+
+                // Devolvemos todo el paquete completo
+                return Results.Ok(new { reserva = datosReserva, habitaciones, huespedes });
+            }
+        });
+        
         app.MapPost("/api/estadias/registrar", async (RegistroEstadiaRequest req) =>
         {
             // 1. VALIDACIÓN DE FECHAS BÁSICA
@@ -168,8 +290,79 @@ public static class EstadiaApi
                 }
             }
         });
+        // 3. RUTA ACTUALIZADA: Cambiar estado de la Estadía Y de las Habitaciones
+        app.MapPut("/api/estadias/{id}/estado", async (int id, CambioEstadoRequest req) =>
+        {
+            if (req.NuevoEstado != "Check-in" && req.NuevoEstado != "Check-out")
+            {
+                return Results.BadRequest(new { error = "Estado no válido." });
+            }
+
+            // Lógica: Si es Check-in, la habitación se Ocupa (2). Si es Check-out, se Libera (1).
+            int nuevoEstadoHabitacion = req.NuevoEstado == "Check-in" ? 2 : 1;
+
+            string connectionString = "Server=localhost;Database=HotelDB;Trusted_Connection=True;TrustServerCertificate=True;";
+
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                await conn.OpenAsync();
+                
+                // Iniciamos la transacción porque tocaremos dos tablas
+                using (SqlTransaction transaction = conn.BeginTransaction())
+                {
+                    try
+                    {
+                        // PASO A: Actualizamos el estado y marcamos la hora exacta
+                        string updateEstadia = "";
+                        if (req.NuevoEstado == "Check-in") {
+                            updateEstadia = "UPDATE Estadia SET Estado_Reserva = @estado, FechaHora_CheckIn = GETDATE() WHERE ID_Estadia = @id";
+                        } else if (req.NuevoEstado == "Check-out") {
+                            updateEstadia = "UPDATE Estadia SET Estado_Reserva = @estado, FechaHora_CheckOut = GETDATE() WHERE ID_Estadia = @id";
+                        }
+
+                        using (SqlCommand cmdEst = new SqlCommand(updateEstadia, conn, transaction))
+                        {
+                            cmdEst.Parameters.AddWithValue("@estado", req.NuevoEstado);
+                            cmdEst.Parameters.AddWithValue("@id", id);
+                            
+                            int filasAfectadas = await cmdEst.ExecuteNonQueryAsync();
+                            if (filasAfectadas == 0)
+                            {
+                                transaction.Rollback();
+                                return Results.NotFound(new { error = "No se encontró la reserva." });
+                            }
+                        }
+
+                        // PASO B: Actualizamos el estado de las Habitaciones vinculadas a esta Estadia
+                        string updateHabitaciones = @"
+                            UPDATE Habitacion 
+                            SET ID_Estado = @estadoHabitacion 
+                            WHERE ID_Habitacion IN (
+                                SELECT ID_Habitacion FROM Estadia_Habitacion WHERE ID_Estadia = @id
+                            )";
+                            
+                        using (SqlCommand cmdHab = new SqlCommand(updateHabitaciones, conn, transaction))
+                        {
+                            cmdHab.Parameters.AddWithValue("@estadoHabitacion", nuevoEstadoHabitacion);
+                            cmdHab.Parameters.AddWithValue("@id", id);
+                            
+                            await cmdHab.ExecuteNonQueryAsync();
+                        }
+
+                        // Si llegamos hasta aquí, todo salió bien, guardamos los cambios
+                        transaction.Commit();
+                        return Results.Ok(new { mensaje = $"Check-in/out exitoso. Las habitaciones han sido actualizadas." });
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        return Results.Problem("Error interno al procesar el cambio: " + ex.Message);
+                    }
+                }
+            }
+        });
     }
-}
+} // <-- Fin del método MapEstadiaEndpoints y la clase EstadiaApi
 
 // MODELO ACTUALIZADO: Ahora recibe un string para la documentación
 public class RegistroEstadiaRequest
@@ -186,4 +379,9 @@ public class HuespedDato
     public string Nombre { get; set; } = string.Empty;
     public string Apellido { get; set; } = string.Empty;
     public string Documentacion { get; set; } = string.Empty;
+}
+
+public class CambioEstadoRequest
+{
+    public string NuevoEstado { get; set; } = string.Empty;
 }
