@@ -390,6 +390,7 @@ public static class EstadiaApi
                        OR u.Nombre LIKE @busqueda 
                        OR u.Apellido LIKE @busqueda
                        OR CONCAT(u.Nombre, ' ', u.Apellido) LIKE @busqueda
+                       OR e.Fecha_Salida LIKE @busqueda
                     ORDER BY e.Fecha_Ingreso DESC";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))

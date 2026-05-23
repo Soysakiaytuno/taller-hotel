@@ -1,9 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "XR3JOAmSnH0=",
+  "dgSpecHash": "FoVSd6RUilw=",
   "success": true,
   "projectFilePath": "C:\\Users\\Mijael Ander\\Documents\\tallersoftware\\elhotel\\taller-hotel\\back\\back.csproj",
   "expectedPackageFiles": [
+    "C:\\Users\\Mijael Ander\\.nuget\\packages\\coverlet.collector\\10.0.1\\coverlet.collector.10.0.1.nupkg.sha512",
     "C:\\Users\\Mijael Ander\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.0\\microsoft.aspnetcore.openapi.10.0.0.nupkg.sha512",
     "C:\\Users\\Mijael Ander\\.nuget\\packages\\microsoft.bcl.cryptography\\9.0.13\\microsoft.bcl.cryptography.9.0.13.nupkg.sha512",
     "C:\\Users\\Mijael Ander\\.nuget\\packages\\microsoft.data.sqlclient\\7.0.0\\microsoft.data.sqlclient.7.0.0.nupkg.sha512",
